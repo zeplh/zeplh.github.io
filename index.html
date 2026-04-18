@@ -693,7 +693,36 @@
       color: var(--accent-strong);
       text-decoration: none;
     }
-    .author-info a:hover {
+    
+    .preview-toggle {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .preview-toggle label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    .preview-toggle label:hover {
+      border-color: #bcd0c1;
+      background: #f8fcf9;
+    }
+    .preview-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-strong);
+      cursor: pointer;
+    }
+.author-info a:hover {
       text-decoration: underline;
     }
   </style>
@@ -706,8 +735,15 @@
         <div class="hero-actions hero-actions-single">
           <button id="startBtn" class="btn-primary">开始测试</button>
         </div>
+
+        <div class="preview-toggle">
+          <label>
+            <input type="checkbox" id="previewToggle">
+            <span>显示题目维度</span>
+          </label>
+        </div>
         <div class="author-info">
-		  <span>鸿盟创客<a href="http://www.3qpd.com" target="_blank">www.3qpd.com</a></span>
+          <span>修改及部署：zeplh</span>
           <span>原作者：<a href="https://space.bilibili.com/417038183?spm_id_from=333.337.search-card.all.click" target="_blank">蛆肉儿串儿</a></span>
           <span>本测试仅供娱乐，请理性看待结果</span>
         </div>
@@ -718,7 +754,11 @@
       <div class="test-wrap card">
         <div class="topbar">
           <div class="progress"><span id="progressBar"></span></div>
-          <div class="progress-text" id="progressText">0 / 31</div>
+          <div class="progress-text" id="progressText"></div>
+          <label style="display: inline-flex; align-items: center; gap: 6px; margin-left: auto;">
+            <input type="checkbox" id="testPreviewToggle">
+            <span style="font-size:13px;">显示维度</span>
+          </label>
         </div>
 
         <div id="questionList" class="question-list"></div>
@@ -1513,6 +1553,7 @@
       progressText.textContent = `${done} / ${total}`;
       const complete = done === total && total > 0;
       submitBtn.disabled = !complete;
+      submitBtn.title = complete ? '' : `还有 ${total - done} 题未完成`;
       testHint.textContent = complete
         ? '都做完了。现在可以把你的电子魂魄交给结果页审判。'
         : '全选完才会放行。世界已经够乱了，起码把题做完整。';
@@ -1660,20 +1701,38 @@
       app.previewMode = preview;
       app.answers = {};
       const shuffledRegular = shuffle(questions);
-      const insertIndex = Math.floor(Math.random() * shuffledRegular.length) + 1;
+      const insertIndex = Math.floor(Math.random() * (shuffledRegular.length + 1));
       app.shuffledQuestions = [
         ...shuffledRegular.slice(0, insertIndex),
         specialQuestions[0],
         ...shuffledRegular.slice(insertIndex)
       ];
       renderQuestions();
+
+      // 绑定测试页内的预览开关
+      const toggle = document.getElementById('testPreviewToggle');
+      if (toggle) {
+        toggle.checked = app.previewMode;
+        toggle.onchange = (e) => {
+          app.previewMode = e.target.checked;
+          renderQuestions();
+        };
+      }
+
       showScreen('test');
     }
 
-    document.getElementById('startBtn').addEventListener('click', () => startTest(false));
+    document.getElementById('startBtn').addEventListener('click', () => {
+      const previewMode = document.getElementById('previewToggle').checked;
+      startTest(previewMode);
+    });
     document.getElementById('backIntroBtn').addEventListener('click', () => showScreen('intro'));
-    document.getElementById('submitBtn').addEventListener('click', renderResult);
-    document.getElementById('restartBtn').addEventListener('click', () => startTest(false));
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      if (confirm('确定提交吗？提交后无法修改答案。')) {
+        renderResult();
+      }
+    });
+    document.getElementById('restartBtn').addEventListener('click', () => startTest(app.previewMode));
     document.getElementById('toTopBtn').addEventListener('click', () => showScreen('intro'));
   </script>
 </body>
